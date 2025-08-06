@@ -6,7 +6,10 @@ import {
     Management, Promotion, UserFilled, User, Crop, EditPen, SwitchButton, CaretBottom
 } from '@element-plus/icons-vue'
 
+import { ElMessage, ElMessageBox } from 'element-plus';
 
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 // 获取用户信息
 import { getUserInfoService } from '@/api/common.js';
@@ -23,6 +26,78 @@ const getUserInfo = async () => {
 }
 
 getUserInfo();
+
+// 折叠和展开header的逻辑
+const contentWrapperRef = ref(null);
+console.log(contentWrapperRef.value);
+
+const isHeaderHidden = ref(false);
+let lastScrollTop = 0;
+
+const handleScroll = () => {
+  const scrollTop = contentWrapperRef.value?.scrollTop || 0;
+
+  if (scrollTop > lastScrollTop + 5) {
+    isHeaderHidden.value = true;
+  } else if (scrollTop < lastScrollTop - 5) {
+    isHeaderHidden.value = false;
+  }
+
+  lastScrollTop = scrollTop;
+};
+
+onMounted(() => {
+  if (contentWrapperRef.value) {
+    contentWrapperRef.value.addEventListener('scroll', handleScroll);
+  }
+});
+
+onUnmounted(() => {
+  if (contentWrapperRef.value) {
+    contentWrapperRef.value.removeEventListener('scroll', handleScroll);
+  }
+});
+
+import { logoutService } from '@/api/common.js';
+
+// 点击header dropdown菜单事件处理函数
+const header_dropdownSelect = (key) => {
+  // 判断指令
+  if (key === 'logout') {
+      //退出登录
+      ElMessageBox.confirm(
+          '您确认退出登录吗？',
+          '温馨提示',
+          {
+              confirmButtonText: '确认',
+              cancelButtonText: '取消',
+              type: 'warning',
+          }
+      ).then(async () => {
+          //退出登录
+          //1.清空pinia中存储的token以及个人信息
+          let result = await logoutService();
+          tokenStore.removeToken();
+          userInfoStore.removeInfo();
+          //2.跳转到登录页面
+          router.push('/login')
+          ElMessage({
+              type: 'success',
+              message: result.msg?result.msg:"退出登录成功"
+          })
+      }).catch(() => {
+          ElMessage({
+              type: 'info',
+              message: '用户已取消退出登录'
+          })
+      })
+  }
+
+
+}
+
+
+
 
 // 当前时间（只取小时数）
 const currentHour = ref(new Date().getHours())
@@ -56,6 +131,11 @@ onUnmounted(() => {
 
 
 
+// 侧边菜单栏点击item事件处理
+const onClickMenuItem = (key) => {
+  router.push(key);
+}
+
 </script>
 
 <template>
@@ -64,16 +144,16 @@ onUnmounted(() => {
       <a-layout-sider collapsible breakpoint="xl">
         <div class="sider_logo" ></div>
         <a-menu
-          :default-open-keys="['1']"
-          :default-selected-keys="['0_3']"
+          :default-open-keys="['/interview']"
+          :default-selected-keys="['/interview']"
           :style="{ width: '100%' }"
           @menu-item-click="onClickMenuItem"
         >
-          <a-menu-item key="0_1">
+          <a-menu-item key="/interview">
             <IconHome></IconHome>
             AI 智能面试
           </a-menu-item>
-          <a-menu-item key="0_2">
+          <a-menu-item key="/post">
             <IconCalendar></IconCalendar>
             投递岗位
           </a-menu-item>
@@ -114,7 +194,7 @@ onUnmounted(() => {
       </a-layout-sider>
 
       <a-layout>
-        <a-layout-header style="padding-left: 20px;">
+        <a-layout-header :class="{ 'header-hidden': isHeaderHidden }">
             <!-- header_logo -->
             <div class="header_logo"></div>
 
@@ -147,11 +227,21 @@ onUnmounted(() => {
                   <icon-down />
                 </span>
                 
-                <!--  -->
+                <!-- dropdown menu -->
                 <template #content>
-                  <a-doption>个人信息</a-doption>
-                  <a-doption disabled>Option 2</a-doption>
-                  <a-doption :value="{ value: 'Option3' }">退出登录</a-doption>
+                  <a-doption value="info">
+                    <template #icon>
+                      <icon-idcard />
+                    </template>
+                    个人信息
+                  </a-doption>
+                  
+                  <a-doption value="logout">
+                    退出登录
+                    <template #icon>
+                      <icon-poweroff />
+                    </template>
+                  </a-doption>
                 </template>
               </a-dropdown>
 
@@ -160,7 +250,7 @@ onUnmounted(() => {
             
         </a-layout-header >
 
-        <div class="arco-layout-content-wrapper">
+        <div ref="contentWrapperRef" class="arco-layout-content-wrapper">
             <!-- 面包屑导航组件 -->
             <a-breadcrumb :style="{ margin: '16px 0' }">
                 <a-breadcrumb-item>Home</a-breadcrumb-item>
@@ -315,9 +405,30 @@ onUnmounted(() => {
     justify-content: space-between;
     height: auto;
     line-height: 80px;
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-bg-3);
     flex-shrink: 0;
     padding: 0 20px;
+    padding-left: 20px;
+    position: relative;
+    z-index: 1000;
+
+    /* 过渡动画 */
+    transition:
+      transform 0.4s ease,
+      opacity 0.4s ease,
+      margin-bottom 0.4s ease;
+    will-change: transform, opacity;
+
+    /* 默认状态 */
+    transform: translateY(0);
+    opacity: 1;
+    margin-bottom: 0;
+  }
+
+  .layout-demo :deep(.header-hidden)  {
+    transform: translateY(-100%);
+    opacity: 0;
+    margin-bottom: -80px; /* 推动下方内容上来 */
   }
 
   .layout-demo :deep(.arco-layout-header .header_logo) {
@@ -350,9 +461,10 @@ onUnmounted(() => {
 
   .layout-demo :deep(.arco-layout-content-wrapper) {
     flex: 1;
-    padding: 0 24px;
-    background: var(--color-bg-3);
+    padding: 0 128px;
+    background: #f5f5f5;
     overflow: auto;
+    transition: margin-top 0.4s ease;
   }
 
   .layout-demo :deep(.arco-layout-content-wrapper) > .arco-breadcrumb {
@@ -363,7 +475,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     padding: 5px 240px;
-    background: #f5f5f7;
+    background: #f0f0f0;
     width: 100%;
     box-sizing: border-box;
   }
@@ -454,15 +566,15 @@ onUnmounted(() => {
 
   .layout-demo :deep(.arco-layout-content) {
     color: var(--color-white);
-    font-weight: 400;
-    font-size: 16px;
-    font-stretch: condensed;
     background: var(--color-bg-3);
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    min-height: 2000px;
+    justify-content: flex-start;
+    min-height: 1000px;
+    gap: 24px;
+    padding-left: 20px;
+    padding-right: 20px;
+    align-items: center;
   }
 
 
