@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-vue": "^0.8.1",
+    "@lottiefiles/lottie-player": "^2.0.12",
     "@vueup/vue-quill": "^1.2.0",
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",

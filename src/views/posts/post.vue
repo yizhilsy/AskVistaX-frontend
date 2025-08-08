@@ -2,8 +2,11 @@
 import { ref, onMounted, onUnmounted, onBeforeUnmount, computed, watch } from 'vue'
 
 import {
-  LocationInformation, OfficeBuilding
+  LocationInformation, OfficeBuilding, Opportunity
 } from '@element-plus/icons-vue'
+
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 // 引入防抖调用
 import { debounce } from 'lodash-es';
@@ -18,7 +21,7 @@ const images = [
 
 // 搜索岗位折叠控制
 
-const collapseActiveKeys = ref(['postType', 'postLocation', 'postBusinessGroup']);
+const collapseActiveKeys = ref(['postType', 'postCategory', 'postLocation', 'postBusinessGroup']);
 
 // 搜索岗位js逻辑
 const pageParams = ref({
@@ -44,6 +47,7 @@ const onPageNumChange = (page) => {
 const searchParams = ref({
   postName: '',
   postType: [],
+  postCategory: [],
   postLocation: [],
   postBusinessGroup: []
 })
@@ -70,6 +74,7 @@ const listPosts = async () => {
     pageSize: pageParams.value.pageSize,
     postName: searchParams.value.postName,
     postType: searchParams.value.postType.join(','),
+    postCategory: searchParams.value.postCategory.join(','),
     postLocation: searchParams.value.postLocation.join(','),
     postBusinessGroup: searchParams.value.postBusinessGroup.join(',')
   }
@@ -89,7 +94,17 @@ const watchFilterChanges = () => {
   watch(() => searchParams.value.postType, debouncedListPosts, { deep: true });
   watch(() => searchParams.value.postLocation, debouncedListPosts, { deep: true });
   watch(() => searchParams.value.postBusinessGroup, debouncedListPosts, { deep: true });
+  watch(() => searchParams.value.postCategory, debouncedListPosts, { deep: true });
 };
+
+const handlePostInfo = (post) => {
+  router.push({
+    path: '/post/detail',
+    query: { postId: post.postId }
+  })
+}
+
+
 
 onMounted(() => {
   listPosts();
@@ -178,6 +193,23 @@ onBeforeUnmount(() => {
           </a-checkbox-group>
         </a-collapse-item>
 
+        <a-collapse-item key="postCategory">
+          <template #header>
+            <el-icon style="margin-right: 8px;"><Opportunity /></el-icon>
+            岗位类别
+          </template>
+
+          <template #expand-icon>
+            <component :is="collapseActiveKeys.includes('postCategory') ? 'icon-minus' : 'icon-plus'" />
+          </template>
+
+          <a-checkbox-group direction="vertical" v-model="searchParams.postCategory">
+            <a-checkbox value="0">技术</a-checkbox>
+            <a-checkbox value="1">职能</a-checkbox>
+          </a-checkbox-group>
+        </a-collapse-item>
+
+
         <a-collapse-item key="postLocation">
           <template #header>
             <el-icon style="margin-right: 8px;"><LocationInformation /></el-icon>
@@ -214,6 +246,8 @@ onBeforeUnmount(() => {
             <a-checkbox value="平台与内容事业群PCG">平台与内容事业群PCG</a-checkbox>
             <a-checkbox value="技术工程事业群TEG">技术工程事业群TEG</a-checkbox>
             <a-checkbox value="微信事业群WXG">微信事业群WXG</a-checkbox>
+            <a-checkbox value="职能系统－职能线S1">职能系统－职能线S1</a-checkbox>
+            <a-checkbox value="职能系统－财经线S2">职能系统－财经线S2</a-checkbox>
           </a-checkbox-group>
         </a-collapse-item>
       </a-collapse>
@@ -227,13 +261,14 @@ onBeforeUnmount(() => {
       :key="index"
       hoverable
       class="card-demo"
+      @click="handlePostInfo(post)"
     >
       <template #title>
         <div class="post-title">{{ post.postName }}</div>
       </template>
 
       <div class="post-tags">
-        <span class="tag">技术</span>
+        <span class="tag"> {{ post.postCategory === 0 ? '技术' : '职能' }} </span>
         <span class="divider">|</span>
         <span class="tag">{{ post.postType === 0 ? '实习生' : post.postType === 1 ? '应届生' : '社会招聘' }}</span>
         <span class="divider">|</span>
@@ -271,7 +306,7 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: center;
   width: 100%;
-  border: 1px solid red; /* 测试可视化边框 */
+  // border: 1px solid red; /* 测试可视化边框 */
 }
 
 .search-card-item {

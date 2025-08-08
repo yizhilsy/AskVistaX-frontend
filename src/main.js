@@ -3,6 +3,10 @@ import './assets/main.scss'
 import { createApp } from 'vue'
 import App from './App.vue'
 
+// 引入lottie动画播放库
+import '@lottiefiles/lottie-player';
+import { DotLottieVue } from '@lottiefiles/dotlottie-vue'
+
 // 引入组件库
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
@@ -28,5 +32,8 @@ app.use(router)
 app.use(ElementPlus, {locale});
 app.use(ArcoVue);
 app.use(ArcoVueIcon);
+
+// 全局注册lottie动画组件
+app.component('DotLottieVue', DotLottieVue)
 
 app.mount('#app');
