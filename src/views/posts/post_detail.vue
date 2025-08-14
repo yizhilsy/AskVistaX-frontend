@@ -4,6 +4,14 @@ import { ref, onMounted, onUnmounted, onBeforeUnmount, computed, watch } from 'v
 import { useRouter } from 'vue-router';
 const router = useRouter();
 
+import useUserInfoStore from '@/stores/userInfo.js';
+import { useTokenStore } from '@/stores/token.js';
+
+import { Notification } from '@arco-design/web-vue';
+
+const tokenStore = useTokenStore();
+const userInfoStore = useUserInfoStore();
+
 // 招聘岗位详情数据模型
 const post = ref(
   {
@@ -33,6 +41,62 @@ onMounted(() => {
   const postId = router.currentRoute.value.query.postId;
   getPostByPostId(postId);
 })
+
+
+
+const fileInput = ref(null);
+const resumeUrl = ref(null);
+
+import { uploadService } from '@/api/common';
+import { deliveryPostService } from '@/api/post';
+
+const deliveryPost = async () => {
+  const postId = router.currentRoute.value.query.postId;
+  let params = {
+    postId: postId,
+    resumeUrl: resumeUrl.value
+  }
+
+  console.log(params)
+  console.log('postId:', router.currentRoute.value.query.postId);
+  console.log('resumeUrl:', resumeUrl.value);
+
+
+  let result = await deliveryPostService(params);
+  if (result.code === 1) {
+    Notification.success({
+        title: 'Success',
+        content: '投递岗位成功',
+    })
+  }
+
+}
+
+const openFileDialog = () => {
+  if (fileInput.value) {
+    fileInput.value.click(); // 触发文件选择对话框
+  }
+};
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  console.log('选择的文件：', file.name);
+
+  uploadService(file).then(res => {
+    console.log('上传成功，文件URL:', res.data);
+    // 这里可以把 URL 存到响应式变量，用于展示或提交表单
+    resumeUrl.value = res.data;
+    deliveryPost();
+    router.push('/post')
+  })
+  .catch(err => {
+    console.error('上传失败', err);
+  });
+  
+};
+
 
 </script>
 
@@ -110,9 +174,18 @@ onMounted(() => {
 </a-typography>
 
 <a-button type="primary" shape="round" size="large" style="margin-top: 40px; padding: 10px 20px; 
-font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;" @click="openFileDialog">
 投递简历
 </a-button>
+
+<!-- 隐藏的文件选择器 -->
+<input
+  type="file"
+  ref="fileInput"
+  accept="application/pdf"
+  style="display: none"
+  @change="handleFileChange"
+/>
 
 </a-card>
 

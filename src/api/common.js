@@ -35,3 +35,13 @@ export const getUserInfoService = () => {
     return request.get('/common/getMyInfo');
 }
 
+export const uploadService = (file) => {
+  const formData = new FormData();
+  formData.append('file', file); // key必须和后端MultipartFile参数名一致
+
+  return request.post('/common/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+};

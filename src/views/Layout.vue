@@ -161,6 +161,12 @@ const onClickMenuItem = (key) => {
             <IconCalendar></IconCalendar>
             个人信息
           </a-menu-item>
+
+          <a-menu-item key="/post/myDelivery">
+            <IconCalendar></IconCalendar>
+            我的投递
+          </a-menu-item>
+
           <a-sub-menu key="1">
             <template #title>
               <IconCalendar></IconCalendar> Navigation 1
@@ -177,6 +183,7 @@ const onClickMenuItem = (key) => {
               <a-menu-item key="3_3">Menu 3</a-menu-item>
             </a-sub-menu>
           </a-sub-menu>
+
           <a-sub-menu key="4">
             <template #title>
               <IconCalendar></IconCalendar> Navigation 4

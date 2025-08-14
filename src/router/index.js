@@ -5,6 +5,7 @@ import LayoutVue from "@/views/Layout.vue"
 import InterviewVue from "@/views/interview/interview.vue"
 import postVue from "@/views/posts/post.vue"
 import postDetailVue from "@/views/posts/post_detail.vue"
+import myPostVue from "@/views/posts/my_post.vue"
 
 import component from 'element-plus/es/components/tree-select/src/tree-select-option.mjs'
 
@@ -14,7 +15,7 @@ const routes = [
         { path: '/interview', component: InterviewVue, meta: { keepAlive: true } },
         { path: '/post', component: postVue, meta: { keepAlive: true } },
         { path: '/post/detail', component: postDetailVue, meta: { keepAlive: true } },
-
+        { path: '/post/myDelivery', component: myPostVue, meta: { keepAlive: true } }
 
     ]},
     {path:'/login', component:LoginVue},
