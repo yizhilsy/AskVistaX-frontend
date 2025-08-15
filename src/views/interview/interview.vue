@@ -1,6 +1,6 @@
 <!-- 面试对应的vue页面 -->
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useRouter } from 'vue-router';
 const router = useRouter();
 
@@ -384,7 +384,9 @@ const interview = ref({
     "videoUrl": '',
     "resumeUrl": '',
     "audioAnalyzeResult": '',
-    "videoAnalyzeResult": ''
+    "videoAnalyzeResult": '',
+    "summary": '',
+    "messageHistory": [],
 })
 
 import { getPostByPostIdService } from '@/api/post';
@@ -455,6 +457,45 @@ const objectToList = (obj) => {
     value
   }))
 }
+
+// 驼峰 key → 中文名 映射表
+const keyMap = {
+  technicalSkills: '技术能力',
+  communicationExpression: '沟通表达',
+  logicalThinking: '逻辑思维',
+  learningAbility: '学习能力',
+  teamWork: '团队协作',
+  stressTolerance: '抗压能力',
+  innovativeThinking: '创新思维',
+  problemSolving: '问题解决'
+}
+
+const radarOption = computed(() => {
+  const radarData = interview.value.summary?.ability_radar || {}
+
+  return {
+    title: { text: '能力雷达图' },
+    tooltip: {},
+    radar: {
+      indicator: Object.keys(radarData).map(key => ({
+        name: keyMap[key] || key, // 显示中文
+        max: 10
+      }))
+    },
+    series: [
+      {
+        type: 'radar',
+        data: [
+          {
+            value: Object.values(radarData),
+            name: '评分'
+          }
+        ]
+      }
+    ]
+  }
+})
+
 
 </script>
 
@@ -565,7 +606,6 @@ const objectToList = (obj) => {
                     box-shadow: 0 0 15px rgba(128, 128, 128, 0.6); /* 灰色光晕 */"
                     v-else
     >
-      
       <!-- 简历 & 视频 -->
       <div>
         <a-typography-title :heading="4">面试视频 & 简历</a-typography-title>
@@ -582,6 +622,81 @@ const objectToList = (obj) => {
       </div>
       
       <a-divider />
+      
+      <!-- 面试总结 -->
+      <template v-if="interview.summary">
+        <a-typography-title :heading="4">面试总结</a-typography-title>
+
+        <!-- 总体评价 -->
+        <a-typography>
+          <a-typography-title :heading="5">总体评价</a-typography-title>
+          <a-typography-paragraph>
+            {{ interview.summary.overall_assessment }}
+          </a-typography-paragraph>
+        </a-typography>
+
+        <!-- 能力雷达 -->
+        <a-typography>
+          <a-typography-title :heading="5">能力评分</a-typography-title>
+          <a-space wrap>
+            <a-tag
+              v-for="(score, ability) in interview.summary.ability_radar"
+              :key="ability"
+              color="arcoblue"
+            >
+              {{ ability }}: {{ score }} / 10.0
+            </a-tag>
+          </a-space>
+        </a-typography>
+
+        <div v-if="interview.summary?.ability_radar">
+          <a-typography-title :heading="4">能力雷达图</a-typography-title>
+          <v-chart :option="radarOption" style="width: 500px; height: 400px;" />
+        </div>
+
+
+        <!-- 关键问题 -->
+        <a-typography style="margin-top: 16px">
+          <a-typography-title :heading="5">关键问题</a-typography-title>
+          <div v-for="(issue, index) in interview.summary.key_issues" :key="index" style="margin-bottom: 12px">
+            <a-tag color="red">{{ issue.category }}</a-tag>
+            <a-typography-paragraph>{{ issue.feedback }}</a-typography-paragraph>
+          </div>
+        </a-typography>
+
+        <!-- 行为反馈 -->
+        <a-typography style="margin-top: 16px">
+          <a-typography-title :heading="5">行为反馈</a-typography-title>
+          <ul>
+            <li v-for="(feedback, index) in interview.summary.behavioral_feedback" :key="index">
+              {{ feedback }}
+            </li>
+          </ul>
+        </a-typography>
+
+        <!-- 招聘建议 -->
+        <a-typography style="margin-top: 16px">
+          <a-typography-title :heading="5">招聘建议</a-typography-title>
+          <a-typography-paragraph>
+            {{ interview.summary.recommendation }}
+          </a-typography-paragraph>
+        </a-typography>
+
+        <!-- 改进建议 -->
+        <a-typography style="margin-top: 16px">
+          <a-typography-title :heading="5">改进建议</a-typography-title>
+          <ul>
+            <li v-for="(suggestion, index) in interview.summary.improvement_suggestions" :key="index">
+              {{ suggestion }}
+            </li>
+          </ul>
+        </a-typography>
+      </template>
+
+
+
+
+
 
       <!-- 视频分析结果 -->
       <template v-if="interview.videoAnalyzeResult && interview.videoAnalyzeResult.videoAssessment">
@@ -591,13 +706,13 @@ const objectToList = (obj) => {
         <!-- 数值字段 -->
         <a-space wrap>
           <a-tag color="blue">
-            参与度 (Engagement): {{ interview.videoAnalyzeResult.videoAssessment.engagement / 1.0}}
+            参与度 (Engagement): {{ interview.videoAnalyzeResult.videoAssessment.engagement }} / 1.0
           </a-tag>
           <a-tag color="green">
-            自信度 (Confidence): {{ interview.videoAnalyzeResult.videoAssessment.confidence / 1.0}}
+            自信度 (Confidence): {{ interview.videoAnalyzeResult.videoAssessment.confidence }} / 1.0
           </a-tag>
           <a-tag color="orange">
-            压力水平 (Stress): {{ interview.videoAnalyzeResult.videoAssessment.stress / 1.0}}
+            压力水平 (Stress): {{ interview.videoAnalyzeResult.videoAssessment.stress }} / 1.0
           </a-tag>
         </a-space>
 
@@ -648,17 +763,17 @@ const objectToList = (obj) => {
 
         <!-- 总分 -->
         <a-tag color="blue">
-          总分：{{ item.overallScore / 10.0}}
+          总分：{{ item.overallScore }} / 10.0
         </a-tag>
 
         <!-- 各维度得分 -->
         <a-divider />
         <div class="dimensions">
-          <a-tag color="arcoblue">完整性: {{ item.dimensions.completeness / 10.0}}</a-tag>
-          <a-tag color="green">准确性: {{ item.dimensions.accuracy / 10.0}}</a-tag>
-          <a-tag color="orange">清晰度: {{ item.dimensions.clarity / 10.0}}</a-tag>
-          <a-tag color="purple">深度: {{ item.dimensions.depth / 10.0}}</a-tag>
-          <a-tag color="red">经验: {{ item.dimensions.experience / 10.0}}</a-tag>
+          <a-tag color="arcoblue">完整性: {{ item.dimensions.completeness }} / 10.0 </a-tag>
+          <a-tag color="green">准确性: {{ item.dimensions.accuracy }} / 10.0 </a-tag>
+          <a-tag color="orange">清晰度: {{ item.dimensions.clarity }} / 10.0 </a-tag>
+          <a-tag color="purple">深度: {{ item.dimensions.depth }} / 10.0 </a-tag>
+          <a-tag color="red">经验: {{ item.dimensions.experience }} / 10.0 </a-tag>
         </div>
 
         <!-- 反馈 -->
